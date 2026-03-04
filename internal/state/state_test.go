@@ -11,12 +11,28 @@ func TestLoad_FileNotExist(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected nil error, got %v", err)
 	}
-	if s.LastSeenSHA != "" {
-		t.Errorf("expected empty SHA, got %q", s.LastSeenSHA)
+	if len(s.Repos) != 0 {
+		t.Errorf("expected empty repos, got %v", s.Repos)
 	}
 }
 
 func TestLoad_ValidFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "state.json")
+	data := `{"repos":{"anthropics/claude-code":{"last_seen_sha":"abc123"}}}`
+	if err := os.WriteFile(path, []byte(data), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	s, err := Load(path)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if s.SHA("anthropics/claude-code") != "abc123" {
+		t.Errorf("expected %q, got %q", "abc123", s.SHA("anthropics/claude-code"))
+	}
+}
+
+func TestLoad_LegacyFormat(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "state.json")
 	if err := os.WriteFile(path, []byte(`{"last_seen_sha":"abc123"}`), 0644); err != nil {
 		t.Fatal(err)
@@ -26,8 +42,8 @@ func TestLoad_ValidFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if s.LastSeenSHA != "abc123" {
-		t.Errorf("expected %q, got %q", "abc123", s.LastSeenSHA)
+	if s.SHA("anthropics/claude-code") != "abc123" {
+		t.Errorf("expected legacy SHA migrated, got %q", s.SHA("anthropics/claude-code"))
 	}
 }
 
@@ -43,9 +59,11 @@ func TestLoad_InvalidJSON(t *testing.T) {
 	}
 }
 
-func TestSave(t *testing.T) {
+func TestSaveLoad(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "state.json")
-	s := State{LastSeenSHA: "xyz789"}
+	var s State
+	s.Repos = make(map[string]RepoState)
+	s.SetSHA("openai/codex", "xyz789")
 
 	if err := Save(path, s); err != nil {
 		t.Fatalf("unexpected Save error: %v", err)
@@ -55,23 +73,14 @@ func TestSave(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected Load error: %v", err)
 	}
-	if loaded.LastSeenSHA != "xyz789" {
-		t.Errorf("expected %q, got %q", "xyz789", loaded.LastSeenSHA)
+	if loaded.SHA("openai/codex") != "xyz789" {
+		t.Errorf("expected %q, got %q", "xyz789", loaded.SHA("openai/codex"))
 	}
 }
 
-func TestSaveLoad_EmptySHA(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "state.json")
-	s := State{LastSeenSHA: ""}
-
-	if err := Save(path, s); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	loaded, err := Load(path)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if loaded.LastSeenSHA != "" {
-		t.Errorf("expected empty SHA, got %q", loaded.LastSeenSHA)
+func TestSHA_Missing(t *testing.T) {
+	s := State{Repos: make(map[string]RepoState)}
+	if s.SHA("nonexistent/repo") != "" {
+		t.Errorf("expected empty SHA for missing repo")
 	}
 }
