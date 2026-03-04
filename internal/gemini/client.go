@@ -22,7 +22,7 @@ func Summarize(ctx context.Context, apiKey, changelog string) (string, error) {
 		return "", fmt.Errorf("failed to create Gemini client: %w", err)
 	}
 
-	result, err := client.Models.GenerateContent(ctx, "gemini-2.0-flash", genai.Text(fmt.Sprintf(prompt, changelog)), nil)
+	result, err := client.Models.GenerateContent(ctx, "gemini-2.5-flash", genai.Text(fmt.Sprintf(prompt, changelog)), nil)
 	if err != nil {
 		return "", fmt.Errorf("gemini API error: %w", err)
 	}
