@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 
+	"github.com/myuron/news/internal/changelog"
 	"github.com/myuron/news/internal/discord"
 	"github.com/myuron/news/internal/gemini"
 	"github.com/myuron/news/internal/github"
@@ -18,16 +20,23 @@ func main() {
 
 	const stateFile = "state.json"
 
+	type source int
+	const (
+		sourceChangelog source = iota
+		sourceRelease
+	)
+
 	type target struct {
-		owner string
-		repo  string
-		path  string
-		title string
+		owner  string
+		repo   string
+		path   string
+		title  string
+		source source
 	}
 
 	targets := []target{
-		{"anthropics", "claude-code", "CHANGELOG.md", "Claude Code CHANGELOG Update"},
-		{"openai", "codex", "CHANGELOG.md", "Codex CHANGELOG Update"},
+		{"anthropics", "claude-code", "CHANGELOG.md", "Claude Code CHANGELOG Update", sourceChangelog},
+		{"openai", "codex", "", "Codex Release Update", sourceRelease},
 	}
 
 	st, err := state.Load(stateFile)
@@ -41,20 +50,36 @@ func main() {
 	for _, t := range targets {
 		repoKey := t.owner + "/" + t.repo
 
-		file, err := github.FetchFile(ghToken, t.owner, t.repo, t.path)
-		if err != nil {
-			log.Printf("[%s] failed to fetch CHANGELOG: %v", repoKey, err)
-			continue
+		var id, content string
+
+		switch t.source {
+		case sourceChangelog:
+			file, err := github.FetchFile(ghToken, t.owner, t.repo, t.path)
+			if err != nil {
+				log.Printf("[%s] failed to fetch CHANGELOG: %v", repoKey, err)
+				continue
+			}
+			id = file.SHA
+			content = changelog.LatestSection(file.Content)
+
+		case sourceRelease:
+			rel, err := github.FetchLatestRelease(ghToken, t.owner, t.repo)
+			if err != nil {
+				log.Printf("[%s] failed to fetch release: %v", repoKey, err)
+				continue
+			}
+			id = rel.TagName
+			content = fmt.Sprintf("# %s\n\n%s", rel.Name, rel.Body)
 		}
 
-		if file.SHA == st.SHA(repoKey) {
+		if id == st.SHA(repoKey) {
 			log.Printf("[%s] No new changes", repoKey)
 			continue
 		}
 
-		log.Printf("[%s] CHANGELOG changed: %s -> %s", repoKey, st.SHA(repoKey), file.SHA)
+		log.Printf("[%s] changed: %s -> %s", repoKey, st.SHA(repoKey), id)
 
-		summary, err := gemini.Summarize(ctx, geminiKey, file.Content)
+		summary, err := gemini.Summarize(ctx, geminiKey, content)
 		if err != nil {
 			log.Printf("[%s] failed to summarize: %v", repoKey, err)
 			continue
@@ -67,7 +92,7 @@ func main() {
 
 		log.Printf("[%s] Discord notification sent", repoKey)
 
-		st.SetSHA(repoKey, file.SHA)
+		st.SetSHA(repoKey, id)
 		changed = true
 	}
 
