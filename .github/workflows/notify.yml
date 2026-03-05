@@ -38,6 +38,3 @@ jobs:
           git commit -m "Update state.json"
           git pull --rebase
           git push
-
-      - name: Keepalive
-        uses: gautamkrishnar/keepalive-workflow@v2
