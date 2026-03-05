@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"log"
 	"os"
@@ -24,19 +25,22 @@ func main() {
 	const (
 		sourceChangelog source = iota
 		sourceRelease
+		sourceURL
 	)
 
 	type target struct {
 		owner  string
 		repo   string
 		path   string
+		url    string
 		title  string
 		source source
 	}
 
 	targets := []target{
-		{"anthropics", "claude-code", "CHANGELOG.md", "Claude Code CHANGELOG Update", sourceChangelog},
-		{"openai", "codex", "", "Codex Release Update", sourceRelease},
+		{"anthropics", "claude-code", "CHANGELOG.md", "", "Claude Code CHANGELOG Update", sourceChangelog},
+		{"openai", "codex", "", "", "Codex Release Update", sourceRelease},
+		{"rork", "changelog", "", "https://rorkapp.notion.site/Changelog-for-Docs-and-Discord-2c76979e738b806abbb8dd3238507bff", "Rork Changelog Update", sourceURL},
 	}
 
 	st, err := state.Load(stateFile)
@@ -70,6 +74,27 @@ func main() {
 			}
 			id = rel.TagName
 			content = fmt.Sprintf("# %s\n\n%s", rel.Name, rel.Body)
+
+		case sourceURL:
+			summary, err := gemini.SummarizeURL(ctx, geminiKey, t.url)
+			if err != nil {
+				log.Printf("[%s] failed to summarize URL: %v", repoKey, err)
+				continue
+			}
+			id = fmt.Sprintf("%x", sha256.Sum256([]byte(summary)))
+			if id == st.SHA(repoKey) {
+				log.Printf("[%s] No new changes", repoKey)
+				continue
+			}
+			log.Printf("[%s] changed: %s -> %s", repoKey, st.SHA(repoKey), id)
+			if err := discord.Send(webhookURL, t.title, summary); err != nil {
+				log.Printf("[%s] failed to send to Discord: %v", repoKey, err)
+				continue
+			}
+			log.Printf("[%s] Discord notification sent", repoKey)
+			st.SetSHA(repoKey, id)
+			changed = true
+			continue
 		}
 
 		if id == st.SHA(repoKey) {
