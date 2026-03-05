@@ -26,6 +26,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
         run: ./news
 
       - name: Commit state changes
@@ -37,3 +38,6 @@ jobs:
           git commit -m "Update state.json"
           git pull --rebase
           git push
+
+      - name: Keepalive
+        uses: gautamkrishnar/keepalive-workflow@v2
