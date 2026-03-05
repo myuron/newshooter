@@ -2,7 +2,7 @@ name: Changelog Notifier
 
 on:
   schedule:
-    - cron: '0 * * * *' # Every hour at :00
+    - cron: '*/5 * * * *' # Every hour at :00
   workflow_dispatch:
 
 permissions:
