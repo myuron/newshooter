@@ -1,4 +1,4 @@
-# news
+# newshooter
 
 開発ツールの更新情報を追跡し、Gemini 2.5 Flash で日本語に要約して Discord に通知する Go アプリケーションです。
 
