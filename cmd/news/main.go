@@ -10,6 +10,7 @@ import (
 	"github.com/myuron/news/internal/changelog"
 	"github.com/myuron/news/internal/discord"
 	"github.com/myuron/news/internal/gemini"
+	"github.com/myuron/news/internal/jina"
 	"github.com/myuron/news/internal/github"
 	"github.com/myuron/news/internal/state"
 )
@@ -76,12 +77,16 @@ func main() {
 			content = fmt.Sprintf("# %s\n\n%s", rel.Name, rel.Body)
 
 		case sourceURL:
-			summary, err := gemini.SummarizeURL(ctx, geminiKey, t.url)
+			markdown, err := jina.FetchMarkdown(t.url)
 			if err != nil {
-				log.Printf("[%s] failed to summarize URL: %v", repoKey, err)
+				log.Printf("[%s] failed to fetch URL via Jina: %v", repoKey, err)
 				continue
 			}
-			log.Printf("[%s] summary length: %d, content: %q", repoKey, len(summary), summary)
+			summary, err := gemini.Summarize(ctx, geminiKey, markdown)
+			if err != nil {
+				log.Printf("[%s] failed to summarize: %v", repoKey, err)
+				continue
+			}
 			id = fmt.Sprintf("%x", sha256.Sum256([]byte(summary)))
 			if id == st.SHA(repoKey) {
 				log.Printf("[%s] No new changes", repoKey)
