@@ -82,14 +82,14 @@ func main() {
 				log.Printf("[%s] failed to fetch URL via Jina: %v", repoKey, err)
 				continue
 			}
+			id = fmt.Sprintf("%x", sha256.Sum256([]byte(markdown)))
+			if id == st.SHA(repoKey) {
+				log.Printf("[%s] No new changes", repoKey)
+				continue
+			}
 			summary, err := gemini.Summarize(ctx, geminiKey, markdown)
 			if err != nil {
 				log.Printf("[%s] failed to summarize: %v", repoKey, err)
-				continue
-			}
-			id = fmt.Sprintf("%x", sha256.Sum256([]byte(summary)))
-			if id == st.SHA(repoKey) {
-				log.Printf("[%s] No new changes", repoKey)
 				continue
 			}
 			log.Printf("[%s] changed: %s -> %s", repoKey, st.SHA(repoKey), id)
