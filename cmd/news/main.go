@@ -81,6 +81,7 @@ func main() {
 				log.Printf("[%s] failed to summarize URL: %v", repoKey, err)
 				continue
 			}
+			log.Printf("[%s] summary length: %d, content: %q", repoKey, len(summary), summary)
 			id = fmt.Sprintf("%x", sha256.Sum256([]byte(summary)))
 			if id == st.SHA(repoKey) {
 				log.Printf("[%s] No new changes", repoKey)
