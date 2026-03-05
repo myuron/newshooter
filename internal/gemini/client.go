@@ -59,9 +59,17 @@ func SummarizeURL(ctx context.Context, apiKey, url string) (string, error) {
 		return "", fmt.Errorf("gemini API error: %w", err)
 	}
 
-	if len(result.Candidates) == 0 || len(result.Candidates[0].Content.Parts) == 0 {
-		return "", fmt.Errorf("gemini returned no content")
+	text := result.Text()
+	if text == "" {
+		reason := ""
+		if len(result.Candidates) > 0 {
+			reason = fmt.Sprintf(" (finish_reason=%s)", result.Candidates[0].FinishReason)
+		}
+		if result.PromptFeedback != nil {
+			reason += fmt.Sprintf(" (block_reason=%s)", result.PromptFeedback.BlockReason)
+		}
+		return "", fmt.Errorf("gemini returned no content%s", reason)
 	}
 
-	return result.Candidates[0].Content.Parts[0].Text, nil
+	return text, nil
 }
