@@ -2,7 +2,7 @@ name: Changelog Notifier
 
 on:
   schedule:
-    - cron: '0 9 * * *' # UTC 9:00 = JST 18:00
+    - cron: '0 * * * *' # Every hour at :00
   workflow_dispatch:
 
 permissions:
@@ -26,6 +26,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
         run: ./news
 
       - name: Commit state changes
