@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-const maxDescriptionLen = 2000
+const maxDescriptionLen = 4096
 
 type embed struct {
 	Title       string `json:"title"`
