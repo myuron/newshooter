@@ -10,7 +10,6 @@ GitHub Actions で定期実行されます。
 |---|---|---|
 | [anthropics/claude-code](https://github.com/anthropics/claude-code) | CHANGELOG.md | GitHub Contents API |
 | [openai/codex](https://github.com/openai/codex) | GitHub Release | GitHub Releases API |
-| [Rork](https://rorkapp.notion.site/Changelog-for-Docs-and-Discord-2c76979e738b806abbb8dd3238507bff) | Notion ページ | Jina Reader API |
 
 ## 仕組み
 
