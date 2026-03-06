@@ -5,9 +5,6 @@
     },
     "openai/codex": {
       "last_seen_sha": "rust-v0.110.0"
-    },
-    "rork/changelog": {
-      "last_seen_sha": "879457ea304f70bc550d48489fd3cb66ac6d9e5748b13c1b7e34a6072d3a4f59"
     }
   }
 }
