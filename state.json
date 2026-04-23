@@ -1,7 +1,7 @@
 {
   "repos": {
     "anthropics/claude-code": {
-      "last_seen_sha": "6e3b347dd3757129a722c637d1c6de29723b8a75"
+      "last_seen_sha": "3084d33eac446d0bad1adee8eb7daa845b9563c6"
     },
     "openai/codex": {
       "last_seen_sha": "rust-v0.122.0"
